@@ -15,7 +15,7 @@ theta_step_true = 0;    % doesn't matter when theta_true = 0
 
 % omega_step_true = 1 when running step input for omega_r (0 for sine
 % input)
-omega_step_true = 1;
+omega_step_true = 0;
 
 %% Motor electrical parameters
 % Motor mechanical parameters
