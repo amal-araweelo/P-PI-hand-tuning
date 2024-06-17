@@ -74,46 +74,74 @@ k_pos = 1.35;
 %% Simulink simulation - STSMC and P-STSMC hand-tuning
 driveTrain_sim = sim("driveTrain_PID_controller", 10);
 
+%% Extracting data
+omega_r_timeseries = driveTrain_sim.omega_r_out;
+theta_r_timeseries = driveTrain_sim.theta_r_out;
+omega_m_timeseries = driveTrain_sim.omega_m_out;
+theta_l_timeseries = driveTrain_sim.theta_l_out;
+
+% Extract data and time
+time = omega_r_timeseries.Time;
+omega_r = omega_r_timeseries.Data;
+theta_r = theta_r_timeseries.Data;
+omega_m = omega_m_timeseries.Data;
+theta_l = theta_l_timeseries.Data;
+
+%% Loss and RSME calculations (same as used for DiffTune)
+% Quadratic loss function: (Yi-Yi_hat)^2
+% MSE = 1/N sum_i^N((Yi-Yi_hat)^2)
+
+e_theta = theta_r - theta_l;
+loss_theta = e_theta .^ 2;
+acc_loss_theta = sum(loss_theta);   % accumulated loss
+rmse_theta = sqrt(1/length(time) * acc_loss_theta);
+
+
+%% Plots
 h1 = figure(1);
 
 if theta_true == 0
     if omega_step_true == 1
-        plot(driveTrain_sim.omega_r_out, 'LineWidth', 1);
+        plot(driveTrain_sim.omega_m_out, 'LineWidth', 1.5);
         hold on;
-        plot(driveTrain_sim.omega_m_out, 'LineWidth', 1);
+        plot(driveTrain_sim.omega_r_out, '--', 'LineWidth', 1.5);
+        hold on;
+        yline(1.06, ':k');
+        %hold on;
+        %yline(0.94, ':k');
+        hold on;
+        yline(1.02, '--k');
+        hold on;
+        yline(0.98, '--k');
+        hold off;
+        grid on;
+        xlabel('time (s)');
+        ylabel('ang. velocity (rad/s)');
+        legend('\omega_r', '\omega_m', 'Location', 'southeast');
+        title('Simulink simulation of step response');
+        saveas(h1, 'Matlab plots\step response of PI hand-tuning.png');
+    else
+        plot(driveTrain_sim.omega_m_out, 'LineWidth', 1.5);
+        hold on;
+        plot(driveTrain_sim.omega_r_out, '--', 'LineWidth', 1.5);
+        hold off;
+        grid on;
+        xlabel('time (s)');
+        ylabel('ang. velocity (rad/s)');
+        legend('\omega_r', '\omega_m', 'Location', 'southeast');
+        title('Simulink simulation of sine response');
+        saveas(h1, 'Matlab plots\sine response of PI hand-tuning.png');
+    end
+    % text(0.5,-0.10,['k1 = ' num2str(k1)]);
+    % text(0.5,-1.25,['k2 = ' num2str(k2)]);
+else
+    if theta_step_true == 1
+        plot(driveTrain_sim.theta_r_out, 'LineWidth', 1.5);
+        hold on;
+        plot(driveTrain_sim.theta_l_out, 'LineWidth', 1.5);
         hold on;
         yline(1.06, ':k');
         hold on;
-        yline(0.94, ':k');
-        hold on;
-        yline(1.02, '--k');
-        hold on;
-        yline(0.98, '--k');
-        hold off;
-        grid on;
-        xlabel('time (s)');
-        ylabel('ang. velocity (rad/s)');
-        legend('\omega_r', '\omega_m', 'Location', 'southeast');
-        title('Simulink simulation of step response');
-        saveas(h1, 'Plots\step response of PI hand-tuning.png');
-    else
-        plot(driveTrain_sim.omega_r_out, 'LineWidth', 1);
-        hold on;
-        plot(driveTrain_sim.omega_m_out, 'LineWidth', 1);
-        hold off;
-        grid on;
-        xlabel('time (s)');
-        ylabel('ang. velocity (rad/s)');
-        legend('\omega_r', '\omega_m', 'Location', 'southeast');
-        title('Simulink simulation of sine response');
-        saveas(h1, 'Plots\sine response of PI hand-tuning.png');
-    end
-else
-    if theta_step_true == 1
-        plot(driveTrain_sim.theta_r_out, 'LineWidth', 1);
-        hold on;
-        plot(driveTrain_sim.theta_l_out, 'LineWidth', 1);
-        hold on;
         yline(1.02, '--k');
         hold on;
         yline(0.98, '--k');
@@ -122,32 +150,33 @@ else
         xlabel('time (s)');
         ylabel('position (rad)');
         legend('\theta_r', '\theta_l', 'Location', 'southeast');
-        title('Simulink simulation of step response');
-        saveas(h1, 'Plots\step response of P-PI hand-tuning.png');
+        title('Hand-tuned P-PI step response');
+        text(0.5,-0.20,['tau_i = ' sprintf('%.4f', tau_i)]);
+        text(0.5,-0.3,['k_vel = ' sprintf('%.4f', k_vel)]);
+        text(0.5,-0.40,['k_pos = ' sprintf('%.4f', k_pos)]);
+        % text(0.5,-1.10,['acc. loss = ' sprintf('%.4f', acc_loss_theta)]);
+        text(0.5,-0.5,['rmse = ' sprintf('%.4f', rmse_theta)]);
+        saveas(h1, 'Matlab plots\step response of P-PI hand-tuning.png');
     else
-        plot(driveTrain_sim.theta_r_out, 'LineWidth', 1);
+        % plot(driveTrain_sim.theta_r_out, '--', 'LineWidth', 1.5);
+        % hold on;
+        plot(driveTrain_sim.theta_l_out, 'LineWidth', 1.5);
         hold on;
-        plot(driveTrain_sim.theta_l_out, 'LineWidth', 1);
+        plot(driveTrain_sim.theta_r_out, '--', 'LineWidth', 1.5);
         hold off;
         grid on;
         xlabel('time (s)');
         ylabel('position (rad)');
-        legend('\theta_r', '\theta_l', 'Location', 'southeast');
-        title('Simulink simulation of sine response');
-        saveas(h1, 'Plots\sine response of P-PI hand-tuning.png');
-        h2 = figure(2);   
-        plot(driveTrain_sim.theta_r_out - driveTrain_sim.theta_l_out, 'LineWidth', 1);
-        hold off;
-        grid on;
-        xlabel('time (s)');
-        ylabel('error (rad)');
-        legend('\theta_r', '\theta_l', 'Location', 'southeast');
-        title('Error between \theta_r and \theta_l');
-        saveas(h2, 'Plots\error sine response.png');
+        lgd = legend('\theta_l', '\theta_r', 'Location', 'southeast');
+        set(lgd, 'FontSize', 11);
+        text(0.5,-0.20,['tau_i = ' sprintf('%.4f', tau_i)]);
+        text(0.5,-0.3,['k_vel = ' sprintf('%.4f', k_vel)]);
+        text(0.5,-0.40,['k_pos = ' sprintf('%.4f', k_pos)]);
+        % text(0.5,-1.10,['acc. loss = ' sprintf('%.4f', acc_loss_theta)]);
+        text(0.5,-0.5,['rmse = ' sprintf('%.4f', rmse_theta)]);
+        % title('Hand-tuned P-STSMC sine response');
+        % saveas(h1, 'Matlab plots\sine response of P-STSMC hand-tuning.png');
+        title('Hand-tuned P-PI sine response')
+        saveas(h1, 'Matlab plots\Hand-tuned P-PI sine response.png');
     end
 end
-
-
-
-
-
