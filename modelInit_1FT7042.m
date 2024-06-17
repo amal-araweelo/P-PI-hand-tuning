@@ -66,10 +66,16 @@ xf = 1;
 %open("driveTrain_PID_controller.slx");
 
 %% P-PI-controller parameters
-k_i = 0.5154813414 * 0.5; 
-k_vel =1.453488372 * 2.45 * 0.99;
-tau_i = k_vel/k_i;
-k_pos = 1.35;
+tau_i = 0.0373;
+k_vel = 0.492;
+k_i = 1/tau_i;
+k_pos = 5.5;
+
+% tau_i = 0.06;
+% k_pos = 9;
+% k_i = 1/tau_i;
+% k_vel = tau_i *k_i;
+
 
 %% Simulink simulation - STSMC and P-STSMC hand-tuning
 driveTrain_sim = sim("driveTrain_PID_controller", 10);
@@ -79,6 +85,7 @@ omega_r_timeseries = driveTrain_sim.omega_r_out;
 theta_r_timeseries = driveTrain_sim.theta_r_out;
 omega_m_timeseries = driveTrain_sim.omega_m_out;
 theta_l_timeseries = driveTrain_sim.theta_l_out;
+
 
 % Extract data and time
 time = omega_r_timeseries.Time;
@@ -96,7 +103,60 @@ loss_theta = e_theta .^ 2;
 acc_loss_theta = sum(loss_theta);   % accumulated loss
 rmse_theta = sqrt(1/length(time) * acc_loss_theta);
 
+%% Plots 1
+subplot(2,2,[1 2]);
 
+% STSMC
+% plot(driveTrain_sim.omega_m_out, 'LineWidth', 1.5);
+% hold on;
+% plot(driveTrain_sim.omega_r_out, '--', 'LineWidth', 1.5);
+% hold off;
+% grid on;
+% legend('\omega_m', '\omega_r', 'Location', 'southeast');
+% ylim([-1 1]);
+% xlabel('time (s)');
+% ylabel('velocity (rad/s)');
+% text(0.5,-0.3,['k1 = ' sprintf('%.4f', k1)]);
+% text(0.5,-0.5,['k2 = ' sprintf('%.4f', k2)]);
+% text(0.5,-0.7,['rmse = ' sprintf('%.4f', rmse_theta)]);
+% title('Hand-tuned STSMC sine response');
+
+% P-STSMC
+h1 = figure(1);
+plot(driveTrain_sim.theta_l_out, 'LineWidth', 1.5);
+hold on;
+plot(driveTrain_sim.theta_r_out, '--', 'LineWidth', 1.5);
+hold off;
+grid on;
+legend('\theta_l', '\theta_r', 'Location', 'southeast');
+ylim([-1 1]);
+xlabel('time (s)');
+ylabel('position (rad)');
+text(0.5,-0.20,['tau_i = ' sprintf('%.4f', tau_i)]);
+text(0.5,-0.4,['k_vel = ' sprintf('%.4f', k_vel)]);
+text(0.5,-0.60,['k_pos = ' sprintf('%.4f', k_pos)]);
+text(0.5,-0.8,['rmse = ' sprintf('%.4f', rmse_theta)]);
+title('Hand-tuned P-PI sine response');
+
+subplot(2,2,3);
+plot(time, abs(e_theta)*10^3, 'LineWidth', 1.5);
+grid on;
+legend('|e_\theta|', 'Location', 'northeast');
+ylim([-0.5 6]);
+xlabel('time (s)');
+ylabel('position error (mrad)');
+title('Position error');
+
+subplot(2,2,4);
+plot(driveTrain_sim.u_out, 'LineWidth', 1.5);
+grid on;
+legend('u', 'Location', 'northeast');
+ylim([-0.2 1]);
+xlabel('time (s)');
+ylabel('torque (N m)');
+title('Torque command');
+
+saveas(h1, 'Matlab plots\Hand-tuning of P-PI.png');
 %% Plots
 h1 = figure(1);
 
