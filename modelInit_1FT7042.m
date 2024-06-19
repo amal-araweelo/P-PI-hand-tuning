@@ -66,17 +66,20 @@ xf = 1;
 %open("driveTrain_PID_controller.slx");
 
 %% P-PI-controller parameters
-tau_i = 0.0373;
-k_vel = 0.492;
-k_i = 1/tau_i;
-k_pos = 5.5;
+% tau_i = 0.0373;
+% k_vel = 0.492;
+% k_i = 1/tau_i;
+% k_pos = 5.5;
 
 % tau_i = 0.06;
 % k_pos = 9;
 % k_i = 1/tau_i;
 % k_vel = tau_i *k_i;
 
-
+% test
+tau_i = 1/1.0084;
+k_pos = 5.0008;
+k_vel = 9.3599;
 %% Simulink simulation - STSMC and P-STSMC hand-tuning
 driveTrain_sim = sim("driveTrain_PID_controller", 10);
 
@@ -136,7 +139,7 @@ text(0.5,-0.20,['tau_i = ' sprintf('%.4f', tau_i)]);
 text(0.5,-0.4,['k_vel = ' sprintf('%.4f', k_vel)]);
 text(0.5,-0.60,['k_pos = ' sprintf('%.4f', k_pos)]);
 text(0.5,-0.8,['rmse = ' sprintf('%.4f', rmse_theta)]);
-title('Hand-tuned P-PI sine response');
+title('DiffTune tuned P-PI sine response');
 
 subplot(2,2,3);
 plot(time, abs(e_theta)*10^3, 'LineWidth', 1.5);
@@ -156,7 +159,7 @@ xlabel('time (s)');
 ylabel('torque (N m)');
 title('Torque command');
 
-saveas(h1, 'Matlab plots\Hand-tuning of P-PI.png');
+saveas(h1, 'Matlab plots\DiffTune tuned of P-PI.png');
 %% Plots
 h1 = figure(1);
 
@@ -236,7 +239,7 @@ else
         text(0.5,-0.5,['rmse = ' sprintf('%.4f', rmse_theta)]);
         % title('Hand-tuned P-STSMC sine response');
         % saveas(h1, 'Matlab plots\sine response of P-STSMC hand-tuning.png');
-        title('Hand-tuned P-PI sine response')
+        title('DiffTune tuned P-PI sine response')
         saveas(h1, 'Matlab plots\Hand-tuned P-PI sine response.png');
     end
 end
